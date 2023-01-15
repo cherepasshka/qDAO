@@ -1,0 +1,14 @@
+{
+    "MIN_DELAY": 1,
+    "ZERO_ADDRESS": "0x0000000000000000000000000000000000000000", 
+    "QUORUM_PERCENTAGE": 4,
+    "VOTING_PERIOD": 7,
+    "VOTING_DELAY": 1,
+    "PROPOSAL_THRESHOLD": 0,
+    "CONTRACTS": {
+        "TimeLock": "TimeLock",
+        "GovernanceToken": "GovernanceToken",
+        "Unit": "Unit",
+        "Governor": "QDAOGovernor"
+    }
+}

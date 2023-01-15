@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 // @ts-ignore
 import { ethers } from "hardhat"
-import { CONTRACTS } from "../config/consts"
+import {CONTRACTS} from '../config/consts.json'
 
 const deployUnit: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore

@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import { MIN_DELAY, CONTRACTS } from "../config/consts"
+import { MIN_DELAY, CONTRACTS } from "../config/consts.json"
 
 const deployTimeLock: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore

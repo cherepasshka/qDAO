@@ -5,8 +5,8 @@ import {
   VOTING_PERIOD,
   VOTING_DELAY,
   PROPOSAL_THRESHOLD,
-  CONTRACTS,
-} from "../config/consts"
+  CONTRACTS
+} from "../config/consts.json"
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore
