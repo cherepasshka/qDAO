@@ -10,7 +10,18 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     address[] private commission;
-    mapping(uint256 => bool) private approvedByCommission;
+    address private extraDecider; // rename it.... (mb related to collective, transaction, sourse)
+    enum CommissionState {
+        Approved,
+        Declined,
+        Pending
+    }
+    struct ComissionCore {
+        bool createdGathering;
+        bool finishedGathering;
+        CommissionState state;
+    }
+    mapping(uint256 => ComissionCore) private commissionDecision;
 
     constructor(
         IVotes _token, 
@@ -46,16 +57,35 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         address[] memory targets,
         uint256[] memory values, // amount of ethers to pay
         bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) public view {
+        bytes32 descriptionHash,
+        CommissionState decision
+    ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         if (isCommissionNeeded(proposalId)) {
+            require(commissionDecision[proposalId].createdGathering, "No commission gathering was created");
+            require(msg.sender == extraDecider, "Only commission can make decision on the crisis issue");
+            require(!commissionDecision[proposalId].finishedGathering, "Decision on this proposal is already made");
+            commissionDecision[proposalId].state = decision;
+            commissionDecision[proposalId].finishedGathering = true;
+        }
+    }
+
+    function validate(
+        address[] memory targets,
+        uint256[] memory values, // amount of ethers to pay
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public {
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        if (isCommissionNeeded(proposalId)) {
+            require(!commissionDecision[proposalId].createdGathering, "Commission gathering was already created");
+            commissionDecision[proposalId].createdGathering = true;
             // emits commission gathering and changes approval state of proposal due to commission decision
         }
     }
 
     function readyToExecute(uint256 proposalId) public view returns(bool) {
-        return (isCommissionNeeded(proposalId) && approvedByCommission[proposalId]) 
+        return (isCommissionNeeded(proposalId) && commissionDecision[proposalId].state == CommissionState.Approved) 
                 || !isCommissionNeeded(proposalId);
     }
 
