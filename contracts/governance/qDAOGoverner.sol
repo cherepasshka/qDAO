@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     address[] private commission;
-    address private extraDecider; // rename it.... (mb related to collective, transaction, sourse)
+    address private collectiveDecisionSource;
     enum CommissionState {
         Approved,
         Declined,
@@ -63,7 +63,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         if (isCommissionNeeded(proposalId)) {
             require(commissionDecision[proposalId].createdGathering, "No commission gathering was created");
-            require(msg.sender == extraDecider, "Only commission can make decision on the crisis issue");
+            require(msg.sender == collectiveDecisionSource, "Only commission can make decision on the crisis issue");
             require(!commissionDecision[proposalId].finishedGathering, "Decision on this proposal is already made");
             commissionDecision[proposalId].state = decision;
             commissionDecision[proposalId].finishedGathering = true;
