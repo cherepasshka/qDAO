@@ -5,7 +5,8 @@ import {
   VOTING_PERIOD,
   VOTING_DELAY,
   PROPOSAL_THRESHOLD,
-  CONTRACTS
+  CONTRACTS,
+  ZERO_ADDRESS
 } from "../config/consts.json"
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -22,7 +23,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
         VOTING_PERIOD,
         PROPOSAL_THRESHOLD,
         QUORUM_PERCENTAGE,
-        [], // commission addresses
+        [[], ZERO_ADDRESS, 0], // commission
     ]
     
     log(`Deploying ${CONTRACTS.Governor} and waiting for confirmations...`)

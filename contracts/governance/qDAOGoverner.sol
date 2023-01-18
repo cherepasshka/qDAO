@@ -9,19 +9,24 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFractio
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
-    address[] private commission;
-    address private collectiveDecisionSource;
     enum CommissionState {
         Approved,
         Declined,
         Pending
     }
-    struct ComissionCore {
+    struct DecisionCore {
         bool createdGathering;
         bool finishedGathering;
         CommissionState state;
     }
-    mapping(uint256 => ComissionCore) private commissionDecision;
+    struct CommissionCore {
+        address[] members;
+        address collectiveDecisionSource;
+        uint256 requiredSignatures;
+    }
+
+    mapping(uint256 => DecisionCore) private commissionSolution;
+    CommissionCore private commission;
 
     constructor(
         IVotes _token, 
@@ -30,7 +35,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         uint256 _votingPeriod, // measured in blocks
         uint256 _proposalThreshold, // minimum number of votes an account must have to create a proposal
         uint256 _quorumFraction,
-        address[] memory _commission
+        CommissionCore memory _commission
     )
         Governor("qDAO")
         GovernorSettings(_votingDelay, _votingPeriod, _proposalThreshold)
@@ -62,14 +67,16 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         if (isCommissionNeeded(proposalId)) {
-            require(commissionDecision[proposalId].createdGathering, "No commission gathering was created");
-            require(msg.sender == collectiveDecisionSource, "Only commission can make decision on the crisis issue");
-            require(!commissionDecision[proposalId].finishedGathering, "Decision on this proposal is already made");
-            commissionDecision[proposalId].state = decision;
-            commissionDecision[proposalId].finishedGathering = true;
+            require(commissionSolution[proposalId].createdGathering, "No commission gathering was created");
+            require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
+            require(!commissionSolution[proposalId].finishedGathering, "Decision on this proposal is already made");
+            // validate that there enough commission members signatures
+            require(verifySignatures(), "Unverified decision");
+            commissionSolution[proposalId].state = decision;
+            commissionSolution[proposalId].finishedGathering = true;
         }
     }
-
+    function verifySignatures() private pure returns(bool) {return true;} // todo
     function validate(
         address[] memory targets,
         uint256[] memory values, // amount of ethers to pay
@@ -78,14 +85,14 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         if (isCommissionNeeded(proposalId)) {
-            require(!commissionDecision[proposalId].createdGathering, "Commission gathering was already created");
-            commissionDecision[proposalId].createdGathering = true;
+            require(!commissionSolution[proposalId].createdGathering, "Commission gathering was already created");
+            commissionSolution[proposalId].createdGathering = true;
             // emits commission gathering and changes approval state of proposal due to commission decision
         }
     }
 
     function readyToExecute(uint256 proposalId) public view returns(bool) {
-        return (isCommissionNeeded(proposalId) && commissionDecision[proposalId].state == CommissionState.Approved) 
+        return (isCommissionNeeded(proposalId) && commissionSolution[proposalId].state == CommissionState.Approved) 
                 || !isCommissionNeeded(proposalId);
     }
 
