@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
+import "../SignatureHandler.sol";
+
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     enum CommissionState {
         Approved,
@@ -27,6 +29,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
 
     mapping(uint256 => DecisionCore) private commissionSolution;
     CommissionCore private commission;
+    SignatureHandler private verifier;
 
     constructor(
         IVotes _token, 
@@ -58,25 +61,54 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return super.execute(targets, values, calldatas, descriptionHash);
     }
 
-    function validate(
+    function decisionHash(
+        uint256 proposalId,
+        CommissionState decision
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(proposalId, decision));
+    }
+
+    function submit(
         address[] memory targets,
         uint256[] memory values, // amount of ethers to pay
         bytes[] memory calldatas,
         bytes32 descriptionHash,
-        CommissionState decision
+        CommissionState decision,
+        bytes[] memory signatures
     ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        if (isCommissionNeeded(proposalId)) {
-            require(commissionSolution[proposalId].createdGathering, "No commission gathering was created");
-            require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
-            require(!commissionSolution[proposalId].finishedGathering, "Decision on this proposal is already made");
-            // validate that there enough commission members signatures
-            require(verifySignatures(), "Unverified decision");
-            commissionSolution[proposalId].state = decision;
-            commissionSolution[proposalId].finishedGathering = true;
-        }
+        require(isCommissionNeeded(proposalId), "No need for commission submission");
+        require(commissionSolution[proposalId].createdGathering, "No commission gathering was created");
+        require(!commissionSolution[proposalId].finishedGathering, "Commission has already submited the solution");
+
+        require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
+        require(!commissionSolution[proposalId].finishedGathering, "Decision on this proposal is already made");
+        // validate that there enough commission members signatures
+        bytes32 ethSignedDecision = verifier.getEthSignedMessageHash(decisionHash(proposalId, decision));
+        verifySignatures(ethSignedDecision, signatures);
+        require(signatures.length >= commission.requiredSignatures, "Not enough signatures");
+        commissionSolution[proposalId].state = decision;
+        commissionSolution[proposalId].finishedGathering = true;
     }
-    function verifySignatures() private pure returns(bool) {return true;} // todo
+
+    function verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view { // todo
+        address[] memory signers = new address[](signatures.length);
+        for(uint i = 0; i < signatures.length; ++i) {
+            signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
+            require(isCommissionMember(signers[i]), "Only commission members can participate in crisis solution");
+        }
+        // require no duplicates
+    }
+
+    function isCommissionMember(address source) private view returns(bool) {
+        for (uint i = 0; i < commission.members.length; ++i) {
+            if (source == commission.members[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function validate(
         address[] memory targets,
         uint256[] memory values, // amount of ethers to pay
