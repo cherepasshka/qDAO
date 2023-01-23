@@ -4,7 +4,7 @@ import { assert, expect } from "chai";
 import { mine } from "@nomicfoundation/hardhat-network-helpers";
 import { Contract } from "ethers";
 //@ts-ignore
-import { ethers, deployments } from "hardhat"
+import { ethers, deployments, SignerWithAddress } from "hardhat"
 
 import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../config/consts.json"
 import {ProposalState} from "../config/enums"
@@ -14,11 +14,18 @@ describe("Successful vote", function() {
     let governor: Contract
     const description = "proposal description"
     const descriptionHash = ethers.utils.id(description)
+    let addresses: SignerWithAddress[]
+
+    before(async function () {
+        addresses = await ethers.getSigners();
+    })
+
     beforeEach(async function () {
         await deployments.fixture(["all"])
         unit = await ethers.getContract(CONTRACTS.Unit)
         governor = await ethers.getContract(CONTRACTS.Governor)
     })
+
     it("Voted for", async function() {
         assert.equal(await unit.getState(), "")
         const encodedChangeState = unit.interface.encodeFunctionData("changeState", ["new state"])
@@ -31,8 +38,12 @@ describe("Successful vote", function() {
         
         await mine(VOTING_DELAY)
         assert.equal(await governor.state(proposalId), ProposalState.Active)
-        
-        await governor.castVoteWithReason(proposalId, 1, "voted for")
+        for (let i = 0; i < 3; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 1, "voted for")
+        }
+        for (let i = 3; i < 4; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 0, "voted against")
+        }
         assert.equal(await governor.state(proposalId), ProposalState.Active)
 
         await mine(VOTING_PERIOD)
@@ -61,7 +72,12 @@ describe("Successful vote", function() {
         await mine(VOTING_DELAY)
         assert.equal(await governor.state(proposalId), ProposalState.Active)
         
-        await governor.castVoteWithReason(proposalId, 0, "voted against")
+        for (let i = 0; i < 3; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 0, "voted against")
+        }
+        for (let i = 3; i < 4; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 1, "voted for")
+        }
         assert.equal(await governor.state(proposalId), ProposalState.Active)
 
         await mine(VOTING_PERIOD)
