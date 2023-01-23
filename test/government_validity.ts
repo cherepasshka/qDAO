@@ -8,10 +8,12 @@ import {CONTRACTS, VOTING_DELAY} from '../config/consts.json'
 describe("Government validity", function() {
     let unit: Contract
     let governor: Contract
+    let token: Contract
     beforeEach(async function () {
         await deployments.fixture(["all"])
         unit = await ethers.getContract(CONTRACTS.Unit)
         governor = await ethers.getContract(CONTRACTS.Governor)
+        token = await ethers.getContract(CONTRACTS.GovernanceToken)
     })
     it("Ownership", async function() {
         await expect(unit.changeState("new state")).to.be.revertedWith("Ownable: caller is not the owner")
@@ -34,5 +36,12 @@ describe("Government validity", function() {
         await mine(VOTING_DELAY)
         await governor.castVoteWithReason(proposalId, 1, "voted for")
         await expect(governor.castVoteWithReason(proposalId, 1, "voted for")).to.be.revertedWith("GovernorVotingSimple: vote already cast")
+    })
+
+    it("Fail to transfer without delegation", async function() {
+        const addresses = await ethers.getSigners();
+        await expect(token.transfer(addresses[1].address, 1)).to.be.revertedWith("Before moving voting power to some address delegate it")
+        await expect(token.connect(addresses[1]).delegate(addresses[1].address)).not.to.be.reverted
+        await expect(token.transfer(addresses[1].address, 1)).not.to.be.reverted
     })
 })
