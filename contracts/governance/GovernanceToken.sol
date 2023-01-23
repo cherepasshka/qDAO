@@ -10,6 +10,16 @@ contract GovernanceToken is ERC20Votes {
         _mint(msg.sender, maxSupply);
     }
 
+    function transfer(address destination, uint256 amount) public override virtual returns(bool){
+        if (destination != address(0)) {
+            require(delegates(destination) != address(0), "Before moving voting power to some address delegate it");
+        }
+        if (msg.sender != address(0)) {
+            require(delegates(msg.sender) != address(0), "Before moving voting power from some address delegate it");
+        }
+        return super.transfer(destination, amount);
+    }
+
     function _afterTokenTransfer(
         address from,
         address to,
