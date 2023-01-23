@@ -7,7 +7,7 @@ import { Contract } from "ethers";
 import { ethers, deployments, SignerWithAddress } from "hardhat"
 
 import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../config/consts.json"
-import {ProposalState} from "../config/enums"
+import {ProposalState, VoteType} from "../config/enums"
 
 describe("Successful vote", function() {
     let unit: Contract
@@ -39,16 +39,18 @@ describe("Successful vote", function() {
         await mine(VOTING_DELAY)
         assert.equal(await governor.state(proposalId), ProposalState.Active)
         for (let i = 0; i < 3; ++i) {
-            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 1, "voted for")
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.For, "voted for")
         }
         for (let i = 3; i < 4; ++i) {
-            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 0, "voted against")
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Against, "voted against")
         }
         assert.equal(await governor.state(proposalId), ProposalState.Active)
 
         await mine(VOTING_PERIOD)
         assert.equal(await governor.state(proposalId), ProposalState.Succeeded)
-        
+
+        assert.equal(await governor.isCommissionNeeded(proposalId), false)
+        assert.equal(await governor.readyToExecute(proposalId), true)
 
         await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("TimelockController: operation is not ready")
 
@@ -57,6 +59,7 @@ describe("Successful vote", function() {
         await mine(MIN_DELAY)
         await governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)
         assert.equal(await unit.getState(), "new state")
+        assert.equal(await governor.state(proposalId), ProposalState.Executed)
     })
 
     it("Voted against", async function() {
@@ -73,18 +76,22 @@ describe("Successful vote", function() {
         assert.equal(await governor.state(proposalId), ProposalState.Active)
         
         for (let i = 0; i < 3; ++i) {
-            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 0, "voted against")
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Against, "voted against")
         }
         for (let i = 3; i < 4; ++i) {
-            await governor.connect(addresses[i]).castVoteWithReason(proposalId, 1, "voted for")
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.For, "voted for")
         }
         assert.equal(await governor.state(proposalId), ProposalState.Active)
 
         await mine(VOTING_PERIOD)
         assert.equal(await governor.state(proposalId), ProposalState.Defeated)
+        assert.equal(await governor.isCommissionNeeded(proposalId), false)
+        assert.equal(await governor.readyToExecute(proposalId), true)
         
         await expect(governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
         await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
         assert.equal(await unit.getState(), "")
+
+        assert.equal(await governor.state(proposalId), ProposalState.Defeated)
     })
 })
