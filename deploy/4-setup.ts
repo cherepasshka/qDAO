@@ -25,15 +25,6 @@ const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnviro
     const revokeTx = await timeLock.revokeRole(adminRole, deployer)
     await revokeTx.wait(1)
     log("Successfuly set up contracts\n")
-
-    // distribution tokens among addresses:
-    for (let i = 1; i < addresses.length; ++i) {
-        await token.connect(addresses[i]).delegate(addresses[i].address)
-    }
-    let supply = await token.totalSupply()
-    for (let i = 1; i < addresses.length; ++i) {
-        await token.transfer(addresses[i].address, supply.div(addresses.length))
-    }
 }
 
 export default setupContracts;

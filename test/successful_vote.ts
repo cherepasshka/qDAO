@@ -12,6 +12,7 @@ import {ProposalState, VoteType} from "../config/enums"
 describe("Successful vote", function() {
     let unit: Contract
     let governor: Contract
+    let token: Contract
     const description = "proposal description"
     const descriptionHash = ethers.utils.id(description)
     let addresses: SignerWithAddress[]
@@ -24,6 +25,15 @@ describe("Successful vote", function() {
         await deployments.fixture(["all"])
         unit = await ethers.getContract(CONTRACTS.Unit)
         governor = await ethers.getContract(CONTRACTS.Governor)
+        token = await ethers.getContract(CONTRACTS.GovernanceToken)
+        // distribution tokens among addresses:
+        for (let i = 1; i < addresses.length; ++i) {
+            await token.connect(addresses[i]).delegate(addresses[i].address)
+        }
+        let supply = await token.totalSupply()
+        for (let i = 1; i < addresses.length; ++i) {
+            await token.transfer(addresses[i].address, supply.div(addresses.length))
+        }
     })
 
     it("Voted for", async function() {
