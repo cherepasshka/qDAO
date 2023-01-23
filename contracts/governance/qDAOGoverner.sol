@@ -12,9 +12,9 @@ import "../SignatureHandler.sol";
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     enum CommissionState {
+        Pending,
         Approved,
-        Declined,
-        Pending
+        Declined
     }
     struct DecisionCore {
         bool createdGathering;
