@@ -58,7 +58,6 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     ) public payable override(IGovernor, Governor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         require(noNeedInValidation(proposalId), "Proposal need validation");
-
         return super.execute(targets, values, calldatas, descriptionHash);
     }
 
@@ -93,15 +92,14 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     }
 
     function successfulCommissionGathering(uint256 proposalId) public view returns(bool) {
-        return commissionSolution[proposalId].state == CommissionState.Approved &&
-            commissionSolution[proposalId].createdGathering && commissionSolution[proposalId].finishedGathering;
+        return commissionSolution[proposalId].createdGathering && commissionSolution[proposalId].finishedGathering;
     }
 
     function verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view { // todo
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
             signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
-            require(isCommissionMember(signers[i]), "Only commission members can participate in crisis solution");
+            require(isCommissionMember(signers[i]), "Invalid signer");
         }
         // require no duplicates
     }
@@ -143,12 +141,15 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         view
         override(Governor, GovernorTimelockControl)
         returns (ProposalState) {
-        if (super.state(proposalId) == ProposalState.Defeated
-            && !super._quorumReached(proposalId) 
-            && successfulCommissionGathering(proposalId)) {
-            return ProposalState.Succeeded;
+        ProposalState voteState = super.state(proposalId);
+        if (voteState == ProposalState.Defeated && !super._quorumReached(proposalId) && successfulCommissionGathering(proposalId)) {
+            if (commissionSolution[proposalId].state == CommissionState.Approved) {
+                return ProposalState.Succeeded;
+            } else if (commissionSolution[proposalId].state == CommissionState.Declined) {
+                return ProposalState.Defeated;
+            }
         }
-        return super.state(proposalId);
+        return voteState;
     }
  
     // mandatary overrides below

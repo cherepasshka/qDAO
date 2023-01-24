@@ -13,4 +13,10 @@ export enum VoteType {
     Against = 0,
     For = 1,
     Abstain = 2
-} 
+}
+
+export enum CommissionState {
+    Pending = 0,
+    Approved = 1,
+    Declined = 2
+}
