@@ -47,6 +47,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         GovernorTimelockControl(_timelock)
     {
         commission = _commission;
+        verifier = new SignatureHandler();
     }
     
     function execute(
@@ -56,7 +57,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         bytes32 descriptionHash
     ) public payable override(IGovernor, Governor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        require(readyToExecute(proposalId), "Proposal is not ready for execution yet, please proceed validation first");
+        require(noNeedInValidation(proposalId), "Proposal need validation");
 
         return super.execute(targets, values, calldatas, descriptionHash);
     }
@@ -91,6 +92,11 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         commissionSolution[proposalId].finishedGathering = true;
     }
 
+    function successfulCommissionGathering(uint256 proposalId) public view returns(bool) {
+        return commissionSolution[proposalId].state == CommissionState.Approved &&
+            commissionSolution[proposalId].createdGathering && commissionSolution[proposalId].finishedGathering;
+    }
+
     function verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view { // todo
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
@@ -123,13 +129,26 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         }
     }
 
-    function readyToExecute(uint256 proposalId) public view returns(bool) {
-        return (isCommissionNeeded(proposalId) && commissionSolution[proposalId].state == CommissionState.Approved) 
+    function noNeedInValidation(uint256 proposalId) public view returns(bool) {
+        return (isCommissionNeeded(proposalId) && successfulCommissionGathering(proposalId))
                 || !isCommissionNeeded(proposalId);
     }
 
     function isCommissionNeeded(uint256 proposalId) public view returns(bool) {
         return !super._quorumReached(proposalId) && state(proposalId) == ProposalState.Defeated;
+    }
+
+    function state(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState) {
+        if (super.state(proposalId) == ProposalState.Defeated
+            && !super._quorumReached(proposalId) 
+            && successfulCommissionGathering(proposalId)) {
+            return ProposalState.Succeeded;
+        }
+        return super.state(proposalId);
     }
  
     // mandatary overrides below
@@ -155,14 +174,6 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256) {
         return super.quorum(blockNumber);
-    }
-
-    function state(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (ProposalState) {
-        return super.state(proposalId);
     }
 
     function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)

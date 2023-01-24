@@ -60,7 +60,7 @@ describe("Successful vote", function() {
         assert.equal(await governor.state(proposalId), ProposalState.Succeeded)
 
         assert.equal(await governor.isCommissionNeeded(proposalId), false)
-        assert.equal(await governor.readyToExecute(proposalId), true)
+        assert.equal(await governor.noNeedInValidation(proposalId), true)
 
         await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("TimelockController: operation is not ready")
 
@@ -96,7 +96,7 @@ describe("Successful vote", function() {
         await mine(VOTING_PERIOD)
         assert.equal(await governor.state(proposalId), ProposalState.Defeated)
         assert.equal(await governor.isCommissionNeeded(proposalId), false)
-        assert.equal(await governor.readyToExecute(proposalId), true)
+        assert.equal(await governor.noNeedInValidation(proposalId), true)
         
         await expect(governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
         await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
