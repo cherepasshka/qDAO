@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import {getCommission} from "../config/commission"
+import {getCommission, getCommissionAddresses} from "../config/commission"
 import {
   QUORUM_PERCENTAGE,
   VOTING_PERIOD,
@@ -25,7 +25,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
         VOTING_PERIOD,
         PROPOSAL_THRESHOLD,
         QUORUM_PERCENTAGE,
-        [commission.members, commission.decisionSource, commission.requiredSignatures]
+        [getCommissionAddresses(commission), commission.decisionSource, commission.requiredSignatures]
     ]
     
     log(`Deploying ${CONTRACTS.Governor} and waiting for confirmations...`)
