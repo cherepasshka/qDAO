@@ -52,7 +52,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     
     function execute(
         address[] memory targets,
-        uint256[] memory values, // amount of ethers to pay
+        uint256[] memory values, // amount of ethers to pay for each target
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) public payable override(IGovernor, Governor) returns (uint256) {
@@ -61,16 +61,23 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return super.execute(targets, values, calldatas, descriptionHash);
     }
 
-    function decisionHash(
-        uint256 proposalId,
-        CommissionState decision
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(proposalId, decision));
+    function validate(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public {
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        if (isCommissionNeeded(proposalId)) {
+            require(!commissionSolution[proposalId].createdGathering, "Commission gathering was already created");
+            commissionSolution[proposalId].createdGathering = true;
+            // emits commission gathering and changes approval state of proposal due to commission decision
+        }
     }
 
     function submit(
         address[] memory targets,
-        uint256[] memory values, // amount of ethers to pay
+        uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash,
         CommissionState decision,
@@ -83,28 +90,32 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
 
         require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
         require(!commissionSolution[proposalId].finishedGathering, "Decision on this proposal is already made");
-        // validate that there enough commission members signatures
+        
+        // validates that there enough commission members signatures
         bytes32 ethSignedDecision = verifier.getEthSignedMessageHash(decisionHash(proposalId, decision));
-        verifySignatures(ethSignedDecision, signatures);
+        _verifySignatures(ethSignedDecision, signatures);
         require(signatures.length >= commission.requiredSignatures, "Not enough signatures");
         commissionSolution[proposalId].state = decision;
         commissionSolution[proposalId].finishedGathering = true;
     }
 
-    function successfulCommissionGathering(uint256 proposalId) public view returns(bool) {
-        return commissionSolution[proposalId].createdGathering && commissionSolution[proposalId].finishedGathering;
+    function decisionHash(
+        uint256 proposalId,
+        CommissionState decision
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(proposalId, decision));
     }
 
-    function verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view { // todo
+    function _verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view {
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
             signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
-            require(isCommissionMember(signers[i]), "Invalid signer");
+            require(_isCommissionMember(signers[i]), "Invalid signer");
         }
-        // require no duplicates
+        // todo: require no duplicates
     }
 
-    function isCommissionMember(address source) private view returns(bool) {
+    function _isCommissionMember(address source) private view returns(bool) {
         for (uint i = 0; i < commission.members.length; ++i) {
             if (source == commission.members[i]) {
                 return true;
@@ -113,18 +124,8 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return false;
     }
 
-    function validate(
-        address[] memory targets,
-        uint256[] memory values, // amount of ethers to pay
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) public {
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        if (isCommissionNeeded(proposalId)) {
-            require(!commissionSolution[proposalId].createdGathering, "Commission gathering was already created");
-            commissionSolution[proposalId].createdGathering = true;
-            // emits commission gathering and changes approval state of proposal due to commission decision
-        }
+    function successfulCommissionGathering(uint256 proposalId) public view returns(bool) {
+        return commissionSolution[proposalId].createdGathering && commissionSolution[proposalId].finishedGathering;
     }
 
     function noNeedInValidation(uint256 proposalId) public view returns(bool) {
