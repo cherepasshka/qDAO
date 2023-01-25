@@ -2,7 +2,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 // @ts-ignore
 import { ethers } from "hardhat"
-import {CONTRACTS} from '../config/consts.json'
+import { BigNumber } from "ethers"
+import {CONTRACTS, MAX_SUPPLY} from '../config/consts.json'
 
 const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore
@@ -12,7 +13,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
     log("Deploying token....")
     const governanceToken = await deploy(CONTRACTS.GovernanceToken, {
         from: deployer,
-        args: [],
+        args: [BigNumber.from(MAX_SUPPLY)],
         log: true,
     })
     log(`Successfuly deployed token at ${governanceToken.address}`);

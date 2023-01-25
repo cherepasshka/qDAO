@@ -10,5 +10,6 @@
         "GovernanceToken": "GovernanceToken",
         "Unit": "Unit",
         "Governor": "QDAOGovernor"
-    }
+    },
+    "MAX_SUPPLY": "1000000000000000000000000"
 }
