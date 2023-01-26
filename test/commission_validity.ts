@@ -78,7 +78,7 @@ describe("Invalid commission usecases", function() {
         assert.equal(await governor.isCommissionNeeded(proposalId), true, "Commission gathering expected to be necessary")
     })
 
-    it("Invalid signature", async function() {
+    it("Invalid signature: non-matching decision", async function() {
         const proposalTx = await governor.propose([unit.address], [0], [encodedChangeState], description)
         const proposeReceipt = await proposalTx.wait(1)
         const proposalId = proposeReceipt.events![0].args!.proposalId
@@ -103,6 +103,39 @@ describe("Invalid commission usecases", function() {
         await expect(
             governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
         ).to.be.revertedWith("One of signatures is invalid")
+
+        assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
+        assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering expected to be not completed")
+        assert.equal(await governor.noNeedInValidation(proposalId), false, "Validation expected to be necessary")
+        assert.equal(await governor.isCommissionNeeded(proposalId), true, "Commission gathering expected to be necessary")
+    })
+
+    it("Invalid signature: broken signature", async function() {
+        const proposalTx = await governor.propose([unit.address], [0], [encodedChangeState], description)
+        const proposeReceipt = await proposalTx.wait(1)
+        const proposalId = proposeReceipt.events![0].args!.proposalId
+        await mine(VOTING_DELAY)
+        for (let i = 1; i < 3; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Against, "voted against")
+        }
+        for (let i = 3; i < 6; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Abstain, "abstain")
+        }
+        await mine(VOTING_PERIOD)
+        // start validating
+        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+
+        // sign proposalId by every commission member
+        let signatures: string[] = new Array();
+        let hash =  await governor.decisionHash(proposalId, CommissionState.Declined);
+        for (let i = 0; i < commission.requiredSignatures; ++i) {
+            let signedDecision = await commission.members[i].signMessage(ethers.utils.arrayify(hash))
+            signatures.push(signedDecision)
+        }
+        signatures.push(await commission.members[0].signMessage(ethers.utils.arrayify(hash)) + "42")
+        await expect(
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+        ).to.be.revertedWith("Invalid signature length")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering expected to be not completed")
@@ -273,5 +306,38 @@ describe("Invalid commission usecases", function() {
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering should not be created")
+    })
+    
+    it("Duplicates in signers", async function() {
+        const proposalTx = await governor.propose([unit.address], [0], [encodedChangeState], description)
+        const proposeReceipt = await proposalTx.wait(1)
+        const proposalId = proposeReceipt.events![0].args!.proposalId
+        await mine(VOTING_DELAY)
+        for (let i = 1; i < 3; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Against, "voted against")
+        }
+        for (let i = 3; i < 6; ++i) {
+            await governor.connect(addresses[i]).castVoteWithReason(proposalId, VoteType.Abstain, "abstain")
+        }
+        await mine(VOTING_PERIOD)
+        // start validating
+        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+
+        // sign proposalId by every commission member
+        let signatures: string[] = new Array();
+        let hash =  await governor.decisionHash(proposalId, CommissionState.Declined);
+        for (let i = 0; i < commission.requiredSignatures; ++i) {
+            let signedDecision = await commission.members[i].signMessage(ethers.utils.arrayify(hash))
+            signatures.push(signedDecision)
+        }
+        signatures.push(await commission.members[0].signMessage(ethers.utils.arrayify(hash)))
+        await expect(
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+        ).to.be.revertedWith("Duplicates found in signatures")
+
+        assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
+        assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering expected to be not completed")
+        assert.equal(await governor.noNeedInValidation(proposalId), false, "Validation expected to be necessary")
+        assert.equal(await governor.isCommissionNeeded(proposalId), true, "Commission gathering expected to be necessary")
     })
 })
