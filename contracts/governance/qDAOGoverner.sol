@@ -131,9 +131,12 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return (isCommissionNeeded(proposalId) && successfulCommissionGathering(proposalId))
                 || !isCommissionNeeded(proposalId);
     }
-
+    function _votedEnough(uint256 proposalId) private view returns(bool) {
+        (uint256 votesAgainst, uint256 votesFor, uint256 votesAbstaint) = proposalVotes(proposalId);
+        return votesAgainst + votesFor + votesAbstaint >= quorum(proposalSnapshot(proposalId));
+    }
     function isCommissionNeeded(uint256 proposalId) public view returns(bool) {
-        return !super._quorumReached(proposalId) && state(proposalId) == ProposalState.Defeated;
+        return !_votedEnough(proposalId) && state(proposalId) == ProposalState.Defeated;
     }
 
     function state(uint256 proposalId)
@@ -142,7 +145,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         override(Governor, GovernorTimelockControl)
         returns (ProposalState) {
         ProposalState voteState = super.state(proposalId);
-        if (voteState == ProposalState.Defeated && !super._quorumReached(proposalId) && successfulCommissionGathering(proposalId)) {
+        if (voteState == ProposalState.Defeated && !_votedEnough(proposalId) && successfulCommissionGathering(proposalId)) {
             if (commissionSolution[proposalId].state == CommissionState.Approved) {
                 return ProposalState.Succeeded;
             } else if (commissionSolution[proposalId].state == CommissionState.Declined) {
