@@ -11,12 +11,12 @@ export const getCommissionAddresses = function(commission: CommissionType): stri
     return commission.members.map(member => member.address)
 }
 export const getCommission = async(): Promise<CommissionType> => {
-    const commissionProviders = await ethers.getSigners();
-    const decisionSource = commissionProviders[0].address
+    const allProviders = await ethers.getSigners();
+    const decisionSource = allProviders[0].address
     const requiredSignatures = 3;
     
     return {
-        members: commissionProviders,
+        members: allProviders.slice(0, 6),
         decisionSource: decisionSource,
         requiredSignatures: requiredSignatures
     }

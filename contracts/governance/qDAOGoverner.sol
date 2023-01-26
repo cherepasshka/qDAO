@@ -84,12 +84,11 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         bytes[] memory signatures
     ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        require(isCommissionNeeded(proposalId), "No need for commission submission");
+        require(isCommissionNeeded(proposalId), "No need for commission solution");
         require(commissionSolution[proposalId].createdGathering, "No commission gathering was created");
         require(!commissionSolution[proposalId].finishedGathering, "Commission has already submited the solution");
 
         require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
-        require(!commissionSolution[proposalId].finishedGathering, "Decision on this proposal is already made");
         
         // validates that there enough commission members signatures
         bytes32 ethSignedDecision = verifier.getEthSignedMessageHash(decisionHash(proposalId, decision));
@@ -110,7 +109,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
             signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
-            require(_isCommissionMember(signers[i]), "Invalid signer");
+            require(_isCommissionMember(signers[i]), "One of signatures is invalid");
         }
         // todo: require no duplicates
     }
