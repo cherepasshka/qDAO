@@ -11,6 +11,9 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "../SignatureHandler.sol";
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
+    event CommissionGatheringCreated(uint256 proposalId, CommissionCore commission);
+    event CommissionGatheringFinished(uint256 proposalId, CommissionCore commission, CommissionState solution);
+
     enum CommissionState {
         Pending,
         Approved,
@@ -71,7 +74,8 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         if (isCommissionNeeded(proposalId)) {
             require(!commissionSolution[proposalId].createdGathering, "Commission gathering was already created");
             commissionSolution[proposalId].createdGathering = true;
-            // emits commission gathering and changes approval state of proposal due to commission decision
+            
+            emit CommissionGatheringCreated(proposalId, commission);
         }
     }
 
@@ -96,6 +100,8 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         require(signatures.length >= commission.requiredSignatures, "Not enough signatures");
         commissionSolution[proposalId].state = decision;
         commissionSolution[proposalId].finishedGathering = true;
+
+        emit CommissionGatheringFinished(proposalId, commission, decision);
     }
 
     function decisionHash(
@@ -131,10 +137,12 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return (isCommissionNeeded(proposalId) && successfulCommissionGathering(proposalId))
                 || !isCommissionNeeded(proposalId);
     }
+
     function _votedEnough(uint256 proposalId) private view returns(bool) {
         (uint256 votesAgainst, uint256 votesFor, uint256 votesAbstaint) = proposalVotes(proposalId);
         return votesAgainst + votesFor + votesAbstaint >= quorum(proposalSnapshot(proposalId));
     }
+
     function isCommissionNeeded(uint256 proposalId) public view returns(bool) {
         return !_votedEnough(proposalId) && state(proposalId) == ProposalState.Defeated;
     }
