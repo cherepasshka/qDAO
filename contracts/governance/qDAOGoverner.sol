@@ -30,6 +30,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         uint256 requiredSignatures;
     }
 
+    mapping(address => bool) private _exist;
     mapping(uint256 => DecisionCore) private commissionSolution;
     CommissionCore private commission;
     SignatureHandler private verifier;
@@ -111,13 +112,19 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return keccak256(abi.encodePacked(proposalId, decision));
     }
 
-    function _verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private view {
+    function _verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private {
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
             signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
             require(_isCommissionMember(signers[i]), "One of signatures is invalid");
         }
-        // todo: require no duplicates
+        for (uint i = 0; i < signers.length; ++i) {
+            require(!_exist[signers[i]], "Duplicates found in signatures");
+            _exist[signers[i]] = true;
+        }
+        for (uint i = 0; i < signers.length; ++i) {
+            _exist[signers[i]] = false;
+        }
     }
 
     function _isCommissionMember(address source) private view returns(bool) {
