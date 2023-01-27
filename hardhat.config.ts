@@ -4,10 +4,6 @@ import "@typechain/hardhat"
 import "@nomiclabs/hardhat-waffle"
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage"
-/** @type import('hardhat/config').HardhatUserConfig */
-// module.exports = {
-//   solidity: "0.8.17",
-// };
 
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",
@@ -21,7 +17,15 @@ const config: HardhatUserConfig = {
             allowUnlimitedContractSize: true,
         }
     },
-    solidity: "0.8.8",
+    solidity: {
+        version: "0.8.8",
+        settings: {
+            optimizer: {
+                enabled: true,
+                runs: 200,
+            },
+        }
+    },
     namedAccounts: {
         deployer: {
             default: 0,
