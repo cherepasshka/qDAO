@@ -118,13 +118,18 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
             signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
             require(_isCommissionMember(signers[i]), "One of signatures is invalid");
         }
+        bool duplicate = false;
         for (uint i = 0; i < signers.length; ++i) {
-            require(!_exist[signers[i]], "Duplicates found in signatures");
+            if (_exist[signers[i]]) {
+                duplicate = true;
+                break;
+            }
             _exist[signers[i]] = true;
         }
         for (uint i = 0; i < signers.length; ++i) {
             _exist[signers[i]] = false;
         }
+        require(!duplicate, "Duplicates found in signatures");
     }
 
     function _isCommissionMember(address source) private view returns(bool) {
