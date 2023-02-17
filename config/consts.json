@@ -11,6 +11,10 @@
         "Unit": "Unit",
         "Governor": "QDAOGovernor"
     },
+    "LIBRARIES": {
+        "SignatureHandle": "SignatureHandle",
+        "Commission": "Commission"
+    },
     "MAX_SUPPLY": "1000000000000000000000000",
     "ZERO_ENV": "0000000000000000000000000000000000000000000000000000000000000000"
 }

@@ -19,9 +19,9 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
         waitConfirmations: networkConfig[network.name].blockConfirmations
     })
     log(`Successfuly deployed token at ${governanceToken.address}`);
-    // log(`Delegating to ${deployer}....`)
-    // await delegate(governanceToken.address, deployer)
-    // log("Delegated!\n")
+    log(`Delegating to ${deployer}....`)
+    await delegate(governanceToken.address, deployer)
+    log("Delegated!\n")
 };
 
 const delegate = async (governanceTokenAddress: string, delegatedAccount: string) => {

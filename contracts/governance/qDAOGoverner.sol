@@ -8,32 +8,22 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
-import "../SignatureHandler.sol";
+import {SignatureHandle} from "../lib/SignatureHandle.sol";
+import {Commission} from "../lib/Commission.sol";
 
 contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
-    event CommissionGatheringCreated(uint256 proposalId, CommissionCore commission);
-    event CommissionGatheringFinished(uint256 proposalId, CommissionCore commission, CommissionState solution);
+    event CommissionGatheringCreated(uint256 proposalId, Commission.Core commission);
+    event CommissionGatheringFinished(uint256 proposalId, Commission.Core commission, Commission.State solution);
 
-    enum CommissionState {
-        Pending,
-        Approved,
-        Declined
-    }
     struct DecisionCore {
         bool createdGathering;
         bool finishedGathering;
-        CommissionState state;
-    }
-    struct CommissionCore {
-        address[] members;
-        address collectiveDecisionSource;
-        uint256 requiredSignatures;
+        Commission.State state;
     }
 
     mapping(address => bool) private _exist;
     mapping(uint256 => DecisionCore) private commissionSolution;
-    CommissionCore private commission;
-    SignatureHandler private verifier;
+    Commission.Core private commission;
 
     constructor(
         IVotes _token, 
@@ -42,7 +32,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         uint256 _votingPeriod, // measured in blocks
         uint256 _proposalThreshold, // minimum number of votes an account must have to create a proposal
         uint256 _quorumFraction,
-        CommissionCore memory _commission
+        Commission.Core memory _commission
     )
         Governor("qDAO")
         GovernorSettings(_votingDelay, _votingPeriod, _proposalThreshold)
@@ -51,7 +41,6 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         GovernorTimelockControl(_timelock)
     {
         commission = _commission;
-        verifier = new SignatureHandler();
     }
     
     function execute(
@@ -85,7 +74,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash,
-        CommissionState decision,
+        Commission.State decision,
         bytes[] memory signatures
     ) public {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
@@ -96,7 +85,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         require(msg.sender == commission.collectiveDecisionSource, "Only commission can make decision on the crisis issue");
         
         // validates that there enough commission members signatures
-        bytes32 ethSignedDecision = verifier.getEthSignedMessageHash(decisionHash(proposalId, decision));
+        bytes32 ethSignedDecision = SignatureHandle.getEthSignedMessageHash(decisionHash(proposalId, decision));
         _verifySignatures(ethSignedDecision, signatures);
         require(signatures.length >= commission.requiredSignatures, "Not enough signatures");
         commissionSolution[proposalId].state = decision;
@@ -107,7 +96,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
 
     function decisionHash(
         uint256 proposalId,
-        CommissionState decision
+        Commission.State decision
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(proposalId, decision));
     }
@@ -115,8 +104,8 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     function _verifySignatures(bytes32 ethSignedMessageHash, bytes[] memory signatures) private {
         address[] memory signers = new address[](signatures.length);
         for(uint i = 0; i < signatures.length; ++i) {
-            signers[i] = verifier.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
-            require(_isCommissionMember(signers[i]), "One of signatures is invalid");
+            signers[i] = SignatureHandle.recoverSignerBySignature(ethSignedMessageHash, signatures[i]);
+            require(Commission.isMember(commission, signers[i]), "One of signatures is invalid");
         }
         bool duplicate = false;
         for (uint i = 0; i < signers.length; ++i) {
@@ -130,15 +119,6 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
             _exist[signers[i]] = false;
         }
         require(!duplicate, "Duplicates found in signatures");
-    }
-
-    function _isCommissionMember(address source) private view returns(bool) {
-        for (uint i = 0; i < commission.members.length; ++i) {
-            if (source == commission.members[i]) {
-                return true;
-            }
-        }
-        return false;
     }
 
     function successfulCommissionGathering(uint256 proposalId) public view returns(bool) {
@@ -166,9 +146,9 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         returns (ProposalState) {
         ProposalState voteState = super.state(proposalId);
         if (voteState == ProposalState.Defeated && !_votedEnough(proposalId) && successfulCommissionGathering(proposalId)) {
-            if (commissionSolution[proposalId].state == CommissionState.Approved) {
+            if (commissionSolution[proposalId].state == Commission.State.Approved) {
                 return ProposalState.Succeeded;
-            } else if (commissionSolution[proposalId].state == CommissionState.Declined) {
+            } else if (commissionSolution[proposalId].state == Commission.State.Declined) {
                 return ProposalState.Defeated;
             }
         }
