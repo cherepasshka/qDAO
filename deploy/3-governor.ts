@@ -7,12 +7,12 @@ import {
   VOTING_DELAY,
   PROPOSAL_THRESHOLD,
   CONTRACTS,
-  ZERO_ADDRESS
 } from "../config/consts.json"
+import {networkConfig} from "../config/network"
 
 const deployGovernorContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore
-    const { getNamedAccounts, deployments } = hre
+    const { getNamedAccounts, deployments, network } = hre
     const { deploy, log, get } = deployments
     const { deployer } = await getNamedAccounts()
     const governanceToken = await get(CONTRACTS.GovernanceToken)
@@ -33,6 +33,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
         from: deployer,
         args: args, 
         log: true,
+        waitConfirmations: networkConfig[network.name].blockConfirmations
     })
     log(`Successfuly deployed ${CONTRACTS.Governor} at ${governorContract.address}\n`)
 }

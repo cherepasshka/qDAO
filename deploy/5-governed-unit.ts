@@ -3,10 +3,11 @@ import { DeployFunction } from "hardhat-deploy/types"
 // @ts-ignore
 import { ethers } from "hardhat"
 import {CONTRACTS} from '../config/consts.json'
+import {networkConfig} from "../config/network"
 
 const deployUnit: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // @ts-ignore
-    const { getNamedAccounts, deployments } = hre
+    const { getNamedAccounts, deployments, network } = hre
     const { deploy, log } = deployments
     const { deployer } = await getNamedAccounts()
     log(`Deploying ${CONTRACTS.Unit} and waiting for confirmations...`)
@@ -14,6 +15,7 @@ const deployUnit: DeployFunction = async function (hre: HardhatRuntimeEnvironmen
         from: deployer,
         args: [],
         log: true,
+        waitConfirmations: networkConfig[network.name].blockConfirmations
     })
     log(`Successfuly deployed ${CONTRACTS.Unit} at ${unit.address}\n`)
     
