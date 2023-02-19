@@ -24,6 +24,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     mapping(address => bool) private _exist;
     mapping(uint256 => DecisionCore) private commissionSolution;
     Commission.Core private commission;
+    address private _owner;
 
     constructor(
         IVotes _token, 
@@ -41,6 +42,34 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         GovernorTimelockControl(_timelock)
     {
         commission = _commission;
+        _owner = address(_timelock);
+    }
+    
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Ownable: caller is not the owner");
+        _;
+    }
+
+    function removeCommissionMember(address member) public onlyOwner virtual returns (bool) {
+        uint length = commission.members.length;
+        for (uint i = 0; i < length; ++i) {
+            if (member == commission.members[i]) {
+                commission.members[i] = commission.members[length - 1];
+                commission.members.pop();
+                emit Commission.MemberRemoved(member);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function addCommissionMember(address member) public onlyOwner virtual returns (bool) {
+        if (Commission.isMember(commission, member)) {
+            return false;
+        }
+        commission.members.push(member);
+        emit Commission.MemberAdded(member);
+        return true;
     }
     
     function execute(

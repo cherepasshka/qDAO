@@ -2,6 +2,9 @@
 pragma solidity ^0.8.0;
 
 library Commission {
+    event MemberAdded(address member);
+    event MemberRemoved(address member);
+
     enum State {
         Pending,
         Approved,
