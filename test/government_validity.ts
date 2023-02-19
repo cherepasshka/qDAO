@@ -16,14 +16,20 @@ describe("Government validity", function() {
         token = await ethers.getContract(CONTRACTS.GovernanceToken)
     })
     it("Ownership", async function() {
-        await expect(unit.changeState("new state")).to.be.revertedWith("Ownable: caller is not the owner")
+        await expect(
+            unit.changeState("new state"),
+            "Straight execution should fail"
+        ).to.be.revertedWith("Ownable: caller is not the owner")
     })
 
     it("Unknown proposal", async function() {
         const encodedFunction = unit.interface.encodeFunctionData("changeState", ["new state"])
         const descriptionHash = ethers.utils.id("some description")
         let funcCallPromise = governor.execute([unit.address], [0], [encodedFunction], descriptionHash)
-        await expect(funcCallPromise).to.be.revertedWith("Governor: unknown proposal id")
+        await expect(
+            funcCallPromise,
+            "Execution should fail"
+        ).to.be.revertedWith("Governor: unknown proposal id")
     })
 
     it("No double votes", async function() {
@@ -35,13 +41,25 @@ describe("Government validity", function() {
         
         await mine(VOTING_DELAY)
         await governor.castVoteWithReason(proposalId, 1, "voted for")
-        await expect(governor.castVoteWithReason(proposalId, 1, "voted for")).to.be.revertedWith("GovernorVotingSimple: vote already cast")
+        await expect(
+            governor.castVoteWithReason(proposalId, 1, "voted for"),
+            "Duplicate vote should fail"
+        ).to.be.revertedWith("GovernorVotingSimple: vote already cast")
     })
 
     it("Fail to transfer without delegation", async function() {
         const addresses = await ethers.getSigners();
-        await expect(token.transfer(addresses[1].address, 1)).to.be.revertedWith("Before moving voting power to some address delegate it")
-        await expect(token.connect(addresses[1]).delegate(addresses[1].address)).not.to.be.reverted
-        await expect(token.transfer(addresses[1].address, 1)).not.to.be.reverted
+        await expect(
+            token.transfer(addresses[1].address, 1),
+            "Transfer without delegating should fail"
+        ).to.be.revertedWith("Before moving voting power to some address delegate it")
+        await expect(
+            token.connect(addresses[1]).delegate(addresses[1].address),
+            "Delegating should be successful"
+        ).not.to.be.reverted
+        await expect(
+            token.transfer(addresses[1].address, 1),
+            "Transfering should be successful"
+        ).not.to.be.reverted
     })
 })

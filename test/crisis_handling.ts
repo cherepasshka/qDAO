@@ -57,7 +57,10 @@ describe("Crisis handling", function() {
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
         assert.equal(await governor.isCommissionNeeded(proposalId), true, "Commission gathering expected to be neccessary")
         assert.equal(await governor.noNeedInValidation(proposalId), false, "Proposal is not ready for execution")
-        await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Proposal need validation")
+        await expect(
+            governor.execute([unit.address], [0], [encodedChangeState], descriptionHash),
+            "The need for validation"
+        ).to.be.revertedWith("Proposal need validation")
     })
 
     it("Quorum not reached, commission approved", async function() {
@@ -75,7 +78,10 @@ describe("Crisis handling", function() {
         await mine(VOTING_PERIOD)
 
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -87,14 +93,23 @@ describe("Crisis handling", function() {
 
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering should be in process")
         // submit decision
-        await expect(governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)).not.to.be.reverted
+        await expect(
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Submission should be successful"
+        ).not.to.be.reverted
 
         assert.equal(await governor.state(proposalId), ProposalState.Succeeded, "Proposal state expected to be `Succeeded`")
         assert.equal(await governor.successfulCommissionGathering(proposalId), true, "Commission gathering should be successful")
     
-        await expect(governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.queue([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Queueing should be successful"
+        ).not.to.be.reverted
         await mine(MIN_DELAY)
-        await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.execute([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Execution should be successful"
+        ).not.to.be.reverted
 
         assert.equal(await unit.getState(), "new state")
         assert.equal(await governor.state(proposalId), ProposalState.Executed)
@@ -115,7 +130,10 @@ describe("Crisis handling", function() {
         await mine(VOTING_PERIOD)
 
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash), "Successful validation").not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash), 
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -129,13 +147,16 @@ describe("Crisis handling", function() {
         // submit decision
         await expect(
             governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
-            "Should be successful submit"
+            "Submission should be successful"
         ).not.to.be.reverted
 
         assert.equal(await governor.successfulCommissionGathering(proposalId), true, "Commission gathering should be successful")
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
 
-        await expect(governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
+        await expect(
+            governor.queue([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Queueing should fail"
+        ).to.be.revertedWith("Governor: proposal not successful")
 
         assert.equal(await unit.getState(), "")
     })

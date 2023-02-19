@@ -44,7 +44,10 @@ describe("Successful vote", function() {
         const proposalId = proposeReceipt.events![0].args!.proposalId
         assert.equal(await governor.state(proposalId), ProposalState.Pending)
         const votePromise = governor.castVoteWithReason(proposalId, 1, "voted for")
-        await expect(votePromise).to.be.revertedWith("Governor: vote not currently active")
+        await expect(
+            votePromise,
+            "Casting vote without active vote should fail"
+        ).to.be.revertedWith("Governor: vote not currently active")
         
         await mine(VOTING_DELAY)
         assert.equal(await governor.state(proposalId), ProposalState.Active)
@@ -62,7 +65,10 @@ describe("Successful vote", function() {
         assert.equal(await governor.isCommissionNeeded(proposalId), false)
         assert.equal(await governor.noNeedInValidation(proposalId), true)
 
-        await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("TimelockController: operation is not ready")
+        await expect(
+            governor.execute([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Execution without queueing should fail"
+        ).to.be.revertedWith("TimelockController: operation is not ready")
 
         await governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)
 
@@ -80,7 +86,10 @@ describe("Successful vote", function() {
         const proposalId = proposeReceipt.events![0].args!.proposalId
         assert.equal(await governor.state(proposalId), ProposalState.Pending)
         const votePromise = governor.castVoteWithReason(proposalId, 1, "voted for")
-        await expect(votePromise).to.be.revertedWith("Governor: vote not currently active")
+        await expect(
+            votePromise,
+            "Casting vote without active vote should fail"
+        ).to.be.revertedWith("Governor: vote not currently active")
         
         await mine(VOTING_DELAY)
         assert.equal(await governor.state(proposalId), ProposalState.Active)
@@ -98,8 +107,14 @@ describe("Successful vote", function() {
         assert.equal(await governor.isCommissionNeeded(proposalId), false)
         assert.equal(await governor.noNeedInValidation(proposalId), true)
         
-        await expect(governor.queue([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
-        await expect(governor.execute([unit.address], [0], [encodedChangeState], descriptionHash)).to.be.revertedWith("Governor: proposal not successful")
+        await expect(
+            governor.queue([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Declined proposal queueing should fail"
+        ).to.be.revertedWith("Governor: proposal not successful")
+        await expect(
+            governor.execute([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Declined proposal execution should fail"
+        ).to.be.revertedWith("Governor: proposal not successful")
         assert.equal(await unit.getState(), "")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated)

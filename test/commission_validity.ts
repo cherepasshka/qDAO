@@ -59,7 +59,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -69,7 +72,8 @@ describe("Invalid commission usecases", function() {
             signatures.push(signedDecision)
         }
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Solution submission should fail due to invalid signatures"
         ).to.be.revertedWith("One of signatures is invalid")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -91,7 +95,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -101,7 +108,8 @@ describe("Invalid commission usecases", function() {
             signatures.push(signedDecision)
         }
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Solution submission should fail due to invalid signatures"
         ).to.be.revertedWith("One of signatures is invalid")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -123,7 +131,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -134,7 +145,8 @@ describe("Invalid commission usecases", function() {
         }
         signatures.push(await commission.members[0].signMessage(ethers.utils.arrayify(hash)) + "42")
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Solution submission should fail due to invalid signatures"
         ).to.be.revertedWith("Invalid signature length")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -156,7 +168,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -166,7 +181,8 @@ describe("Invalid commission usecases", function() {
             signatures.push(signedDecision)
         }
         await expect(
-            governor.connect(addresses[1]).submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
+            governor.connect(addresses[1]).submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Solution submission should fail due to invalid sender"
         ).to.be.revertedWith("Only commission can make decision on the crisis issue")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -188,7 +204,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -198,7 +217,8 @@ describe("Invalid commission usecases", function() {
             signatures.push(signedDecision)
         }
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Solution submission should fail due to invalid signatures"
         ).to.be.revertedWith("Not enough signatures")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -221,7 +241,10 @@ describe("Invalid commission usecases", function() {
         await mine(VOTING_PERIOD)
 
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -233,13 +256,17 @@ describe("Invalid commission usecases", function() {
 
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering should be in process")
         // submit decision
-        await expect(governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)).not.to.be.reverted
+        await expect(
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Submission is expected to be successful"
+        ).not.to.be.reverted
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
         assert.equal(await governor.successfulCommissionGathering(proposalId), true, "Commission gathering should be successful")
     
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Approved, signatures),
+            "Submission is expected to fail due to redundancy"
         ).to.be.revertedWith("Commission has already submited the solution")
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
     })
@@ -272,7 +299,8 @@ describe("Invalid commission usecases", function() {
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering should be not started")
         // submit decision
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Commission gathering expected to be redundant"
         ).to.be.revertedWith("No need for commission solution")
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
     })
@@ -301,7 +329,8 @@ describe("Invalid commission usecases", function() {
         assert.equal(await governor.successfulCommissionGathering(proposalId), false, "Commission gathering should be not started")
         // submit decision
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Commission gathering is expected to be not started"
         ).to.be.revertedWith("No commission gathering was created")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -321,7 +350,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -332,7 +364,8 @@ describe("Invalid commission usecases", function() {
         }
         signatures.push(await commission.members[0].signMessage(ethers.utils.arrayify(hash)))
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Duplicates should be discovered"
         ).to.be.revertedWith("Duplicates found in signatures")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -354,7 +387,10 @@ describe("Invalid commission usecases", function() {
         }
         await mine(VOTING_PERIOD)
         // start validating
-        await expect(governor.validate([unit.address], [0], [encodedChangeState], descriptionHash)).not.to.be.reverted
+        await expect(
+            governor.validate([unit.address], [0], [encodedChangeState], descriptionHash),
+            "Validation should be successful"
+        ).not.to.be.reverted
 
         // sign proposalId by every commission member
         let signatures: string[] = new Array();
@@ -365,7 +401,8 @@ describe("Invalid commission usecases", function() {
         }
         signatures.push(await commission.members[0].signMessage(ethers.utils.arrayify(hash)))
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "Duplicates should be discovered"
         ).to.be.revertedWith("Duplicates found in signatures")
 
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
@@ -375,7 +412,8 @@ describe("Invalid commission usecases", function() {
         
         signatures.pop()
         await expect(
-            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures)
+            governor.submit([unit.address], [0], [encodedChangeState], descriptionHash, CommissionState.Declined, signatures),
+            "No duplicates should be discovered"
         ).not.to.be.reverted
         assert.equal(await governor.state(proposalId), ProposalState.Defeated, "Proposal state expected to be `Defeated`")
         assert.equal(await governor.successfulCommissionGathering(proposalId), true, "Commission gathering expected to be completed")
