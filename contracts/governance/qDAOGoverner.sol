@@ -15,6 +15,9 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     event CommissionGatheringCreated(uint256 proposalId, Commission.Core commission);
     event CommissionGatheringFinished(uint256 proposalId, Commission.Core commission, Commission.State solution);
 
+    event CommissionMemberAdded(address member);
+    event CommissionMemberRemoved(address member);
+
     struct DecisionCore {
         bool createdGathering;
         bool finishedGathering;
@@ -56,7 +59,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
             if (member == commission.members[i]) {
                 commission.members[i] = commission.members[length - 1];
                 commission.members.pop();
-                emit Commission.MemberRemoved(member);
+                emit CommissionMemberRemoved(member);
                 return true;
             }
         }
@@ -68,7 +71,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
             return false;
         }
         commission.members.push(member);
-        emit Commission.MemberAdded(member);
+        emit CommissionMemberAdded(member);
         return true;
     }
     
