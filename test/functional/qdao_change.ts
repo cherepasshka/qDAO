@@ -3,9 +3,9 @@ import { assert, expect } from "chai";
 import { ethers, deployments, SignerWithAddress } from "hardhat"
 import { mine } from "@nomicfoundation/hardhat-network-helpers";
 import { Contract } from "ethers";
-import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY, ZERO_ADDRESS } from "../config/consts.json"
-import { CommissionType, getCommission } from "../config/commission";
-import { CommissionState, ProposalState, VoteType } from "../config/enums";
+import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY, ZERO_ADDRESS } from "../../config/consts.json"
+import { CommissionType, getCommission } from "../../config/commission";
+import { CommissionState, ProposalState, VoteType } from "../../config/enums";
 
 describe("QDAO commission change via commission", function() {
     let governor: Contract

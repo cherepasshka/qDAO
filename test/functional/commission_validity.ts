@@ -6,14 +6,9 @@ import { Contract } from "ethers";
 //@ts-ignore
 import { ethers, deployments, SignerWithAddress } from "hardhat"
     
-import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../config/consts.json"
-import { CommissionType, getCommission } from "../config/commission";
-import { CommissionState, ProposalState, VoteType } from "../config/enums";
-
-/* todo:
-    - more tests for noNeedInValidation
-    - more tests for submit
- */
+import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../../config/consts.json"
+import { CommissionType, getCommission } from "../../config/commission";
+import { CommissionState, ProposalState, VoteType } from "../../config/enums";
 
 describe("Invalid commission usecases", function() {
     let unit: Contract

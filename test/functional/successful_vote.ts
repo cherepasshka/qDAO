@@ -6,8 +6,8 @@ import { Contract } from "ethers";
 //@ts-ignore
 import { ethers, deployments, SignerWithAddress } from "hardhat"
 
-import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../config/consts.json"
-import {ProposalState, VoteType} from "../config/enums"
+import { CONTRACTS, VOTING_DELAY, VOTING_PERIOD, MIN_DELAY } from "../../config/consts.json"
+import {ProposalState, VoteType} from "../../config/enums"
 
 describe("Successful vote", function() {
     let unit: Contract

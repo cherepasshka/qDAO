@@ -3,7 +3,7 @@ import { assert, expect } from "chai";
 import { ethers, deployments } from "hardhat"
 import { mine } from "@nomicfoundation/hardhat-network-helpers";
 import { Contract } from "ethers";
-import {CONTRACTS, VOTING_DELAY, ZERO_ADDRESS} from '../config/consts.json'
+import {CONTRACTS, VOTING_DELAY, ZERO_ADDRESS} from '../../config/consts.json'
 
 describe("Government validity", function() {
     let unit: Contract
