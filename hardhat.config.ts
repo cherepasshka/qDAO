@@ -4,20 +4,11 @@ import "@typechain/hardhat"
 import "@nomiclabs/hardhat-waffle"
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage"
+import {getTestnet} from "./config/helpers"
 
-import { ZERO_ENV } from "./config/consts.json"
-import {parseEnv} from "./config/helpers"
-
-function getGoerliEnvVar(envKey: string, specification: string): string {
-    const testnet = parseEnv('TESTNET')
-    if (!testnet['ok'] || testnet['val'] != 'true') {
-        return ZERO_ENV;
-    }
-    const account = parseEnv(envKey);
-    if (!account['ok']) {
-        throw Error(`Specify ${specification} for Goerli testnet via setting ${envKey} env variable`);
-    }
-    return account['val'];
+const testnets = {
+    'goerli': getTestnet('goerli'),
+    'sepolia': getTestnet('sepolia')
 }
 
 const config: HardhatUserConfig = {
@@ -32,8 +23,12 @@ const config: HardhatUserConfig = {
             allowUnlimitedContractSize: true,
         },
         goerli: {
-            url: `https://eth-goerli.alchemyapi.io/v2/${getGoerliEnvVar('ALCHEMY_API_KEY', 'api key')}`,
-            accounts: [getGoerliEnvVar('GOERLI_PRIVATE_KEY', 'private key')],
+            url: `https://eth-goerli.alchemyapi.io/v2/${testnets['goerli'].api_key}`,
+            accounts: [testnets['goerli'].private_key],
+        },
+        sepolia: {
+            url: `https://eth-sepolia.g.alchemy.com/v2/${testnets['sepolia'].api_key}`,
+            accounts: [testnets['sepolia'].private_key]
         }
     },
     solidity: {

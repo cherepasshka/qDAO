@@ -8,4 +8,7 @@ export const networkConfig = {
     "goerli": {
         blockConfirmations: 6,
     },
+    "sepolia": {
+        blockConfirmations: 6,
+    },
 }

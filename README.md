@@ -29,3 +29,15 @@ yarn
 ```
 yarn hardhat test
 ```
+
+4. Deploy to blockchain testnet
+
+Firstly you need to set up environment variables:
+- `ALCHEMY_API_KEY`
+- `SEPOLIA_PRIVATE_KEY`(preferred) or `GOERLI_PRIVATE_KEY`
+
+and then run
+
+```bash
+yarn hardhat deploy --network sepolia
+```
