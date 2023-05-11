@@ -27,7 +27,7 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
     mapping(address => bool) private _exist;
     mapping(uint256 => DecisionCore) private commissionSolution;
     Commission.Core private commission;
-    address private _owner;
+    address private immutable _owner;
 
     constructor(
         IVotes _token, 

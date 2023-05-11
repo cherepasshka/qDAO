@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract GovernanceToken is ERC20Votes {
-    uint256 private __maxSupply;
+    uint256 private immutable _maxReserve;
 
-    constructor(uint256 maxSupply) ERC20("qDAOGovernanceToken", "qGT") ERC20Permit("qDAOGovernanceToken") {
-        __maxSupply = maxSupply;
-        _mint(msg.sender, __maxSupply);
+    constructor(uint256 maxReserve) ERC20("qDAOGovernanceToken", "qGT") ERC20Permit("qDAOGovernanceToken") {
+        _maxReserve = maxReserve;
+        _mint(msg.sender, _maxReserve);
     }
 
     function transfer(address destination, uint256 amount) public override virtual returns(bool){
