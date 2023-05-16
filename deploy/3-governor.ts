@@ -17,13 +17,12 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     const { getNamedAccounts, deployments, network } = hre
     const { deploy, log, get } = deployments
     const { deployer } = await getNamedAccounts()
-
     const sh = await get(LIBRARIES.SignatureHandle);
     const com = await get(LIBRARIES.Commission)
 
     const governanceToken = await get(CONTRACTS.GovernanceToken)
     const timeLock = await get(CONTRACTS.TimeLock)
-    const commission = await getCommission()
+    const commission = await getCommission(network.name)
     const args = [
         governanceToken.address,
         timeLock.address,

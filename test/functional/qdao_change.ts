@@ -18,7 +18,7 @@ describe("QDAO commission change via commission", function() {
         governor = await ethers.getContract(CONTRACTS.Governor)
         token = await ethers.getContract(CONTRACTS.GovernanceToken)
         addresses = await ethers.getSigners();
-        commission = await getCommission();
+        commission = await getCommission("hardhat");
 
         for (let i = 1; i < addresses.length; ++i) {
             await token.connect(addresses[i]).delegate(addresses[i].address)

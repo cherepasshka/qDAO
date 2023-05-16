@@ -21,7 +21,7 @@ describe("Crisis handling", function() {
 
     before(async function () {
         addresses = await ethers.getSigners();
-        commission = await getCommission();
+        commission = await getCommission("hardhat");
     })
 
     beforeEach(async function () {
