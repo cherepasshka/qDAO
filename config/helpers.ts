@@ -1,3 +1,5 @@
+import {ZERO_ENV} from './consts.json'
+
 export function parseEnv(key: string) {
     const value = process.env[key];
     if (value == undefined) {
@@ -18,8 +20,13 @@ interface TestNet {
 }
 
 export function getTestnet(testnet: string) : TestNet {
-    return {
+    let result = {
         api_key: parseEnv('ALCHEMY_API_KEY')['val'],
-        private_key: parseEnv(`${testnet.toUpperCase()}_PRIVATE_KEY`)['val']
+        private_key: ZERO_ENV
     }
+    let private_var = parseEnv(`${testnet.toUpperCase()}_PRIVATE_KEY`);
+    if (private_var['ok']) {
+        result.private_key = private_var['val']
+    }
+    return result
 }
