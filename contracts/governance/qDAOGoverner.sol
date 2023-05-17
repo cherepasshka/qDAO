@@ -86,6 +86,17 @@ contract QDAOGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gov
         return super.execute(targets, values, calldatas, descriptionHash);
     }
 
+    function queue(
+        address[] memory targets,
+        uint256[] memory values, // amount of ethers to pay for each target
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public virtual override(GovernorTimelockControl) returns (uint256) {
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        require(noNeedInValidation(proposalId), "Proposal need validation");
+        return super.queue(targets, values, calldatas, descriptionHash);
+    }
+
     function validate(
         address[] memory targets,
         uint256[] memory values,

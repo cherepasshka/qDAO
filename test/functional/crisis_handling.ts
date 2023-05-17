@@ -61,6 +61,10 @@ describe("Crisis handling", function() {
             governor.execute([unit.address], [0], [encodedChangeState], descriptionHash),
             "The need for validation"
         ).to.be.revertedWith("Proposal need validation")
+        await expect(
+            governor.queue([unit.address], [0], [encodedChangeState], descriptionHash),
+            "The need for validation"
+        ).to.be.revertedWith("Proposal need validation")
     })
 
     it("Quorum not reached, commission approved", async function() {
